@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>My Web Launcher</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f0f13;
+    --surface: #1a1a22;
+    --surface2: #22222d;
+    --surface3: #2a2a38;
+    --border: rgba(255,255,255,0.07);
+    --border2: rgba(255,255,255,0.13);
+    --text: #f0f0f4;
+    --text2: #9090a8;
+    --text3: #5a5a72;
+    --accent: #6c63ff;
+    --accent2: #8b85ff;
+    --accentbg: rgba(108,99,255,0.15);
+    --green: #22c55e;
+    --red: #ef4444;
+    --amber: #f59e0b;
+    --radius: 14px;
+    --radius-sm: 9px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ── TOP BAR ── */
+  .topbar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 24px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .logo {
+    width: 32px; height: 32px;
+    background: var(--accent);
+    border-radius: 9px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; flex-shrink: 0;
+  }
+  .app-title { font-size: 15px; font-weight: 600; letter-spacing: -0.3px; }
+  .app-subtitle { font-size: 11px; color: var(--text3); font-family: 'DM Mono', monospace; }
+  .spacer { flex: 1; }
+  .search-wrap {
+    position: relative;
+    display: flex; align-items: center;
+  }
+  .search-wrap svg {
+    position: absolute; left: 10px;
+    color: var(--text3); pointer-events: none;
+  }
+  #searchInput {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    padding: 7px 12px 7px 34px;
+    width: 220px;
+    outline: none;
+    transition: border-color 0.2s, width 0.2s;
+  }
+  #searchInput:focus { border-color: var(--accent); width: 280px; }
+  #searchInput::placeholder { color: var(--text3); }
+  .top-btn {
+    background: var(--accentbg);
+    border: 1px solid rgba(108,99,255,0.3);
+    border-radius: var(--radius-sm);
+    color: var(--accent2);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px; font-weight: 500;
+    padding: 7px 14px;
+    cursor: pointer;
+    transition: background 0.15s;
+    white-space: nowrap;
+  }
+  .top-btn:hover { background: rgba(108,99,255,0.25); }
+
+  /* ── LAYOUT ── */
+  .layout { display: flex; flex: 1; }
+
+  /* ── SIDEBAR ── */
+  .sidebar {
+    width: 190px;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    padding: 16px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex-shrink: 0;
+  }
+  .sidebar-label {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    color: var(--text3);
+    text-transform: uppercase;
+    padding: 6px 10px 4px;
+    margin-top: 8px;
+  }
+  .cat-btn {
+    background: none;
+    border: none;
+    border-radius: var(--radius-sm);
+    color: var(--text2);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    padding: 8px 10px;
+    text-align: left;
+    cursor: pointer;
+    display: flex; align-items: center; gap: 8px;
+    transition: background 0.15s, color 0.15s;
+    width: 100%;
+  }
+  .cat-btn:hover { background: var(--surface2); color: var(--text); }
+  .cat-btn.active { background: var(--accentbg); color: var(--accent2); font-weight: 500; }
+  .cat-btn .badge {
+    margin-left: auto;
+    background: var(--surface3);
+    border-radius: 20px;
+    font-size: 10px;
+    padding: 1px 7px;
+    color: var(--text3);
+    font-family: 'DM Mono', monospace;
+  }
+  .cat-btn.active .badge { background: rgba(108,99,255,0.2); color: var(--accent2); }
+  .add-cat-btn {
+    background: none;
+    border: 1px dashed var(--border2);
+    border-radius: var(--radius-sm);
+    color: var(--text3);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    padding: 7px 10px;
+    cursor: pointer;
+    margin-top: 4px;
+    display: flex; align-items: center; gap: 6px;
+    transition: border-color 0.15s, color 0.15s;
+  }
+  .add-cat-btn:hover { border-color: var(--accent2); color: var(--accent2); }
+
+  /* ── MAIN ── */
+  .main { flex: 1; padding: 24px; overflow-y: auto; }
+  .section-header {
+    display: flex; align-items: center;
+    gap: 10px; margin-bottom: 18px;
+  }
+  .section-header h2 { font-size: 18px; font-weight: 500; }
+  .section-header .count { font-size: 12px; color: var(--text3); font-family: 'DM Mono', monospace; background: var(--surface2); border-radius: 20px; padding: 2px 9px; }
+
+  /* ── GRID ── */
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 12px; }
+
+  .site-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px 12px 14px;
+    display: flex; flex-direction: column; align-items: center; gap: 10px;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s, transform 0.1s;
+    position: relative;
+    text-decoration: none;
+    user-select: none;
+  }
+  .site-card:hover { border-color: var(--border2); background: var(--surface2); transform: translateY(-2px); }
+  .site-card:active { transform: scale(0.97); }
+
+  .site-icon {
+    width: 44px; height: 44px;
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px;
+    flex-shrink: 0;
+    overflow: hidden;
+  }
+  .site-icon img { width: 100%; height: 100%; object-fit: cover; border-radius: 12px; }
+  .site-icon.text-icon {
+    font-size: 15px; font-weight: 700;
+    letter-spacing: -0.5px;
+    color: #fff;
+  }
+  .site-name {
+    font-size: 12px; font-weight: 500;
+    color: var(--text);
+    text-align: center;
+    line-height: 1.3;
+    word-break: break-word;
+    width: 100%;
+  }
+  .site-domain { font-size: 10px; color: var(--text3); font-family: 'DM Mono', monospace; text-align: center; }
+
+  .card-menu {
+    position: absolute; top: 7px; right: 7px;
+    background: var(--surface3);
+    border: 1px solid var(--border2);
+    border-radius: 6px;
+    width: 22px; height: 22px;
+    display: none; align-items: center; justify-content: center;
+    cursor: pointer; color: var(--text2); font-size: 12px;
+    transition: background 0.15s;
+    z-index: 5;
+  }
+  .site-card:hover .card-menu { display: flex; }
+  .card-menu:hover { background: var(--red); color: #fff; border-color: var(--red); }
+
+  /* Add card */
+  .add-card {
+    background: var(--surface);
+    border: 1px dashed var(--border2);
+    border-radius: var(--radius);
+    padding: 18px 12px 14px;
+    display: flex; flex-direction: column; align-items: center;
+    justify-content: center; gap: 8px;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+    min-height: 120px;
+    color: var(--text3);
+    font-size: 13px;
+  }
+  .add-card:hover { border-color: var(--accent2); color: var(--accent2); background: var(--accentbg); }
+  .add-card svg { opacity: 0.5; }
+  .add-card:hover svg { opacity: 1; }
+
+  /* ── MODAL ── */
+  .modal-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.7);
+    z-index: 1000;
+    align-items: center; justify-content: center;
+    padding: 20px;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border2);
+    border-radius: 18px;
+    width: 100%; max-width: 420px;
+    padding: 24px;
+    animation: pop 0.18s ease;
+  }
+  @keyframes pop { from { transform: scale(0.94); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  .modal h3 { font-size: 16px; font-weight: 600; margin-bottom: 18px; }
+  .field { margin-bottom: 14px; }
+  .field label { font-size: 12px; color: var(--text2); display: block; margin-bottom: 5px; font-weight: 500; }
+  .field input, .field select {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    border-radius: var(--radius-sm);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    padding: 9px 12px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .field input:focus, .field select:focus { border-color: var(--accent); }
+  .field input::placeholder { color: var(--text3); }
+  .field select option { background: #1a1a22; }
+  .icon-row { display: flex; gap: 8px; align-items: center; }
+  .icon-row input { flex: 1; }
+  .color-pick { width: 40px; height: 40px; border-radius: 8px; border: 1px solid var(--border2); cursor: pointer; padding: 2px; background: none; }
+  .modal-btns { display: flex; gap: 10px; margin-top: 20px; }
+  .btn { flex: 1; padding: 10px; border-radius: var(--radius-sm); font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 500; cursor: pointer; border: none; transition: opacity 0.15s; }
+  .btn-cancel { background: var(--surface2); color: var(--text2); }
+  .btn-cancel:hover { background: var(--surface3); }
+  .btn-save { background: var(--accent); color: #fff; }
+  .btn-save:hover { opacity: 0.88; }
+
+  /* Empty */
+  .empty-state { text-align: center; padding: 60px 20px; color: var(--text3); }
+  .empty-state svg { margin-bottom: 12px; opacity: 0.3; }
+  .empty-state p { font-size: 14px; }
+
+  /* Toasts */
+  #toast {
+    position: fixed; bottom: 24px; right: 24px;
+    background: var(--surface3); border: 1px solid var(--border2);
+    color: var(--text); border-radius: 10px;
+    padding: 10px 18px; font-size: 13px;
+    display: none; z-index: 9999;
+    animation: fadein 0.2s ease;
+  }
+  @keyframes fadein { from { opacity:0; transform: translateY(8px); } to { opacity:1; transform: translateY(0); } }
+
+  /* Stats bar */
+  .stats-bar {
+    display: flex; gap: 20px;
+    padding: 10px 24px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    font-size: 12px; color: var(--text3);
+    font-family: 'DM Mono', monospace;
+  }
+  .stat span { color: var(--text2); font-weight: 500; }
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <div class="logo">🚀</div>
+  <div>
+    <div class="app-title">Web Launcher</div>
+    <div class="app-subtitle">Ramnagar High School</div>
+  </div>
+  <div class="spacer"></div>
+  <div class="search-wrap">
+    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+    <input id="searchInput" type="text" placeholder="Search sites..." oninput="renderGrid()" />
+  </div>
+  <button class="top-btn" onclick="openAddModal()">+ Add Site</button>
+  <button class="top-btn" onclick="exportHTML()" style="background:rgba(34,197,94,0.12);border-color:rgba(34,197,94,0.3);color:#4ade80;">💾 Export</button>
+</div>
+
+<!-- STATS BAR -->
+<div class="stats-bar">
+  <div id="statTotal">Total: <span>0</span></div>
+  <div id="statCats">Categories: <span>0</span></div>
+  <div id="statTime">Last updated: <span>—</span></div>
+</div>
+
+<div class="layout">
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="sidebar-label">Categories</div>
+    <button class="cat-btn active" onclick="setCategory('__all__',this)" data-cat="__all__">
+      <span>🗂️</span> All Sites
+      <span class="badge" id="badge-all">0</span>
+    </button>
+    <div id="catList"></div>
+    <div style="margin-top:8px">
+      <button class="add-cat-btn" onclick="addCategory()">
+        <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+        New Category
+      </button>
+    </div>
+
+    <div class="sidebar-label" style="margin-top:auto;padding-top:12px">Actions</div>
+    <button class="cat-btn" onclick="importPresets()"><span>⚡</span> Load RHS Sites</button>
+    <button class="cat-btn" onclick="clearAll()" style="color:var(--text3)"><span>🗑️</span> Clear All</button>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main">
+    <div class="section-header">
+      <h2 id="catTitle">All Sites</h2>
+      <span class="count" id="gridCount">0 sites</span>
+    </div>
+    <div class="grid" id="grid"></div>
+  </div>
+</div>
+
+<!-- ADD/EDIT MODAL -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <h3 id="modalTitle">Add New Site</h3>
+    <div class="field">
+      <label>Site Name</label>
+      <input id="mName" type="text" placeholder="e.g. RHS PRMS" />
+    </div>
+    <div class="field">
+      <label>URL</label>
+      <input id="mUrl" type="text" placeholder="https://..." />
+    </div>
+    <div class="field">
+      <label>Category</label>
+      <select id="mCat"></select>
+    </div>
+    <div class="field">
+      <label>Icon (emoji or 2 letters) & Color</label>
+      <div class="icon-row">
+        <input id="mIcon" type="text" placeholder="📋 or RH" maxlength="4" />
+        <input id="mColor" type="color" class="color-pick" value="#6c63ff" />
+      </div>
+    </div>
+    <div class="modal-btns">
+      <button class="btn btn-cancel" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-save" onclick="saveSite()">Save</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ── DATA ──────────────────────────────────────────────────────────
+const STORE_KEY = 'webLauncherData_v2';
+let editingId = null;
+let activeCat = '__all__';
+
+function loadData() {
+  try { return JSON.parse(localStorage.getItem(STORE_KEY)) || { sites: [], categories: [] }; }
+  catch(e) { return { sites: [], categories: [] }; }
+}
+function saveData(d) {
+  d.lastUpdated = new Date().toLocaleString();
+  localStorage.setItem(STORE_KEY, JSON.stringify(d));
+}
+
+// ── PRESETS ──────────────────────────────────────────────────────
+const PRESETS = {
+  categories: ['School Systems','Deployment','Tools','Others'],
+  sites: [
+    { name: 'RHS PRMS v2',       url: 'https://rhs-prms-v2.onrender.com',             cat: 'School Systems', icon: '📋', color: '#6c63ff' },
+    { name: 'PRMS API',          url: 'https://rhs-prms-api-v2.onrender.com',          cat: 'School Systems', icon: '⚙️', color: '#8b85ff' },
+    { name: 'WBCHSE XI Result',  url: 'https://tmahata12.github.io/WBCHSE_XI-RESULT/', cat: 'School Systems', icon: '📊', color: '#22c55e' },
+    { name: 'WBCHSE Backend',    url: 'https://wbbchse-backend.onrender.com',          cat: 'School Systems', icon: '🔧', color: '#16a34a' },
+    { name: 'GitHub',            url: 'https://github.com/Tmahata12',                  cat: 'Deployment',     icon: '🐙', color: '#374151' },
+    { name: 'Render',            url: 'https://dashboard.render.com',                  cat: 'Deployment',     icon: '🚀', color: '#0ea5e9' },
+    { name: 'MongoDB Atlas',     url: 'https://cloud.mongodb.com',                     cat: 'Deployment',     icon: '🍃', color: '#16a34a' },
+    { name: 'Google Drive',      url: 'https://drive.google.com',                      cat: 'Tools',          icon: '📂', color: '#f59e0b' },
+    { name: 'Gmail',             url: 'https://mail.google.com',                       cat: 'Tools',          icon: '✉️', color: '#ef4444' },
+  ]
+};
+
+function importPresets() {
+  const d = loadData();
+  const existingUrls = new Set(d.sites.map(s => s.url));
+  PRESETS.categories.forEach(c => { if (!d.categories.includes(c)) d.categories.push(c); });
+  PRESETS.sites.forEach(s => {
+    if (!existingUrls.has(s.url)) d.sites.push({ ...s, id: uid() });
+  });
+  saveData(d);
+  renderAll();
+  toast('RHS sites loaded!');
+}
+
+// ── UTILS ────────────────────────────────────────────────────────
+function uid() { return Math.random().toString(36).slice(2,10); }
+function domain(url) { try { return new URL(url).hostname.replace('www.',''); } catch(e) { return url; } }
+function faviconSrc(url) { try { return `https://www.google.com/s2/favicons?domain=${new URL(url).hostname}&sz=128`; } catch(e) { return ''; } }
+function initials(name) { return name.trim().split(/\s+/).map(w=>w[0]).join('').toUpperCase().slice(0,2); }
+
+function toast(msg, dur=2200) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.style.display = 'block';
+  clearTimeout(t._t);
+  t._t = setTimeout(() => { t.style.display = 'none'; }, dur);
+}
+
+// ── RENDER ───────────────────────────────────────────────────────
+function renderAll() {
+  renderSidebar();
+  renderGrid();
+  updateStats();
+}
+
+function renderSidebar() {
+  const d = loadData();
+  const list = document.getElementById('catList');
+  document.getElementById('badge-all').textContent = d.sites.length;
+  list.innerHTML = d.categories.map(cat => {
+    const count = d.sites.filter(s => s.cat === cat).length;
+    const icons = { 'School Systems':'🏫','Deployment':'☁️','Tools':'🛠️','Others':'📌' };
+    const ico = icons[cat] || '📁';
+    return `<button class="cat-btn ${activeCat===cat?'active':''}" onclick="setCategory('${cat.replace(/'/g,"\\'")}',this)" data-cat="${cat}">
+      <span>${ico}</span> ${cat}
+      <span class="badge">${count}</span>
+    </button>`;
+  }).join('');
+}
+
+function renderGrid() {
+  const d = loadData();
+  const q = document.getElementById('searchInput').value.trim().toLowerCase();
+  let filtered = activeCat === '__all__' ? d.sites : d.sites.filter(s => s.cat === activeCat);
+  if (q) filtered = filtered.filter(s => s.name.toLowerCase().includes(q) || domain(s.url).includes(q));
+
+  document.getElementById('catTitle').textContent = activeCat === '__all__' ? 'All Sites' : activeCat;
+  document.getElementById('gridCount').textContent = filtered.length + ' site' + (filtered.length!==1?'s':'');
+
+  const grid = document.getElementById('grid');
+  if (!filtered.length) {
+    grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1">
+      <svg width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9 9h.01M15 9h.01M8 13s1.5 2 4 2 4-2 4-2"/></svg>
+      <p>${q ? 'No results for "'+q+'"' : 'No sites yet — click Add Site'}</p>
+    </div>`;
+    return;
+  }
+
+  grid.innerHTML = filtered.map(s => `
+    <div class="site-card" onclick="openSite('${s.url}')" title="${s.url}">
+      <span class="card-menu" onclick="deleteSite(event,'${s.id}')">✕</span>
+      <div class="site-icon ${!s.useFavicon ? 'text-icon' : ''}" style="${!s.useFavicon ? 'background:'+s.color : ''}">
+        ${s.useFavicon
+          ? `<img src="${faviconSrc(s.url)}" onerror="this.closest('.site-icon').classList.add('text-icon');this.closest('.site-icon').style.background='${s.color}';this.closest('.site-icon').textContent='${s.icon||initials(s.name)}'" />`
+          : (s.icon || initials(s.name))
+        }
+      </div>
+      <div class="site-name">${s.name}</div>
+      <div class="site-domain">${domain(s.url)}</div>
+    </div>
+  `).join('') + `
+    <div class="add-card" onclick="openAddModal('${activeCat==='__all__'?'':activeCat}')">
+      <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+      Add Site
+    </div>`;
+}
+
+function updateStats() {
+  const d = loadData();
+  document.getElementById('statTotal').innerHTML = `Total: <span>${d.sites.length}</span>`;
+  document.getElementById('statCats').innerHTML = `Categories: <span>${d.categories.length}</span>`;
+  document.getElementById('statTime').innerHTML = `Last updated: <span>${d.lastUpdated || '—'}</span>`;
+}
+
+// ── ACTIONS ──────────────────────────────────────────────────────
+function setCategory(cat, btn) {
+  activeCat = cat;
+  document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderGrid();
+}
+
+function openSite(url) {
+  window.open(url, '_blank');
+}
+
+function deleteSite(e, id) {
+  e.stopPropagation();
+  if (!confirm('Remove this site?')) return;
+  const d = loadData();
+  d.sites = d.sites.filter(s => s.id !== id);
+  saveData(d);
+  renderAll();
+  toast('Site removed');
+}
+
+function addCategory() {
+  const name = prompt('Category name:');
+  if (!name || !name.trim()) return;
+  const d = loadData();
+  if (!d.categories.includes(name.trim())) {
+    d.categories.push(name.trim());
+    saveData(d);
+    renderAll();
+  }
+}
+
+function clearAll() {
+  if (!confirm('Clear ALL sites and categories? This cannot be undone.')) return;
+  localStorage.removeItem(STORE_KEY);
+  renderAll();
+  toast('All data cleared');
+}
+
+// ── MODAL ────────────────────────────────────────────────────────
+function openAddModal(preCat) {
+  editingId = null;
+  document.getElementById('modalTitle').textContent = 'Add New Site';
+  document.getElementById('mName').value = '';
+  document.getElementById('mUrl').value = '';
+  document.getElementById('mIcon').value = '';
+  document.getElementById('mColor').value = '#6c63ff';
+  populateCatSelect(preCat || (activeCat !== '__all__' ? activeCat : ''));
+  document.getElementById('modalOverlay').classList.add('open');
+  setTimeout(() => document.getElementById('mName').focus(), 80);
+}
+
+function closeModal() {
+  document.getElementById('modalOverlay').classList.remove('open');
+}
+
+function populateCatSelect(selected) {
+  const d = loadData();
+  const sel = document.getElementById('mCat');
+  sel.innerHTML = d.categories.map(c => `<option value="${c}" ${c===selected?'selected':''}>${c}</option>`).join('');
+  if (!d.categories.length) sel.innerHTML = '<option value="Others">Others</option>';
+}
+
+function saveSite() {
+  const name = document.getElementById('mName').value.trim();
+  const url = document.getElementById('mUrl').value.trim();
+  const cat = document.getElementById('mCat').value;
+  const icon = document.getElementById('mIcon').value.trim();
+  const color = document.getElementById('mColor').value;
+  if (!name || !url) { toast('Name and URL are required!'); return; }
+  let fullUrl = url;
+  if (!url.startsWith('http')) fullUrl = 'https://' + url;
+  const d = loadData();
+  if (editingId) {
+    const idx = d.sites.findIndex(s => s.id === editingId);
+    if (idx !== -1) d.sites[idx] = { ...d.sites[idx], name, url: fullUrl, cat, icon, color, useFavicon: false };
+  } else {
+    d.sites.push({ id: uid(), name, url: fullUrl, cat, icon, color, useFavicon: false });
+    if (!d.categories.includes(cat)) d.categories.push(cat);
+  }
+  saveData(d);
+  renderAll();
+  closeModal();
+  toast(editingId ? 'Site updated!' : 'Site added!');
+}
+
+// ── EXPORT ───────────────────────────────────────────────────────
+function exportHTML() {
+  const d = loadData();
+  const cards = d.sites.map(s => {
+    const dom = domain(s.url);
+    const ico = s.icon || initials(s.name);
+    return `<a class="card" href="${s.url}" target="_blank" title="${s.url}">
+  <div class="ico" style="background:${s.color}">${ico}</div>
+  <div class="name">${s.name}</div>
+  <div class="dom">${dom}</div>
+</a>`;
+  }).join('\n');
+
+  const catSections = d.categories.map(cat => {
+    const cs = d.sites.filter(s => s.cat === cat);
+    if (!cs.length) return '';
+    return `<h2 class="cat-heading">${cat}</h2>
+<div class="grid">${cs.map(s => {
+  const ico = s.icon || initials(s.name);
+  return `<a class="card" href="${s.url}" target="_blank"><div class="ico" style="background:${s.color}">${ico}</div><div class="name">${s.name}</div><div class="dom">${domain(s.url)}</div></a>`;
+}).join('')}</div>`;
+  }).join('\n');
+
+  const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>My Web Launcher — RHS</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:#0f0f13;color:#f0f0f4;min-height:100vh;padding:0}
+.topbar{background:#1a1a22;border-bottom:1px solid rgba(255,255,255,0.07);padding:14px 28px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:10}
+.logo{width:32px;height:32px;background:#6c63ff;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:16px}
+.title{font-size:15px;font-weight:600}.sub{font-size:11px;color:#5a5a72;font-family:monospace}
+.search{background:#22222d;border:1px solid rgba(255,255,255,0.07);border-radius:9px;color:#f0f0f4;font-family:'DM Sans',sans-serif;font-size:13px;padding:7px 14px;width:260px;outline:none;margin-left:auto}
+.search:focus{border-color:#6c63ff}
+main{padding:28px}
+.cat-heading{font-size:13px;font-weight:600;color:#5a5a72;text-transform:uppercase;letter-spacing:1px;margin:28px 0 12px;padding-bottom:8px;border-bottom:1px solid rgba(255,255,255,0.05)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:12px;margin-bottom:8px}
+.card{background:#1a1a22;border:1px solid rgba(255,255,255,0.07);border-radius:14px;padding:18px 10px 14px;display:flex;flex-direction:column;align-items:center;gap:9px;cursor:pointer;text-decoration:none;transition:transform 0.1s,border-color 0.15s}
+.card:hover{border-color:rgba(255,255,255,0.18);transform:translateY(-2px);background:#22222d}
+.ico{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;color:#fff;font-weight:700;font-size:15px}
+.name{font-size:12px;font-weight:500;color:#f0f0f4;text-align:center;word-break:break-word;line-height:1.3}
+.dom{font-size:10px;color:#5a5a72;font-family:monospace;text-align:center}
+footer{text-align:center;padding:24px;font-size:11px;color:#5a5a72;border-top:1px solid rgba(255,255,255,0.05);margin-top:20px}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="logo">🚀</div>
+  <div><div class="title">Web Launcher</div><div class="sub">Ramnagar High School</div></div>
+  <input class="search" type="text" placeholder="Search..." oninput="filterCards(this.value)" />
+</div>
+<main>
+${catSections}
+</main>
+<footer>Generated by Web Launcher App · ${d.sites.length} sites · ${new Date().toLocaleDateString()}</footer>
+<script>
+function filterCards(q){
+  const cards=document.querySelectorAll('.card');
+  cards.forEach(c=>{
+    const name=c.querySelector('.name').textContent.toLowerCase();
+    const dom=c.querySelector('.dom').textContent.toLowerCase();
+    c.style.display=(name.includes(q.toLowerCase())||dom.includes(q.toLowerCase()))||!q?'flex':'none';
+  });
+}
+<\/script>
+</body>
+</html>`;
+
+  const a = document.createElement('a');
+  a.href = 'data:text/html;charset=utf-8,' + encodeURIComponent(html);
+  a.download = 'MyWebLauncher.html';
+  a.click();
+  toast('Exported! Open the HTML file anytime.');
+}
+
+// Keyboard shortcut
+document.addEventListener('keydown', e => {
+  if ((e.ctrlKey||e.metaKey) && e.key==='k') { e.preventDefault(); document.getElementById('searchInput').focus(); }
+  if (e.key==='Escape') closeModal();
+});
+
+// Init
+renderAll();
+</script>
+</body>
+</html>
