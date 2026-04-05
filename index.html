@@ -357,16 +357,29 @@
 
     <div class="sidebar-label" style="margin-top:auto;padding-top:12px">Actions</div>
     <button class="cat-btn" onclick="importPresets()"><span>⚡</span> Load RHS Sites</button>
+    <button class="cat-btn" onclick="setView('github',this)"><span>🐙</span> GitHub Repos <span class="badge" id="badge-gh">—</span></button>
     <button class="cat-btn" onclick="clearAll()" style="color:var(--text3)"><span>🗑️</span> Clear All</button>
   </div>
 
   <!-- MAIN -->
   <div class="main">
-    <div class="section-header">
-      <h2 id="catTitle">All Sites</h2>
-      <span class="count" id="gridCount">0 sites</span>
+    <!-- MY SITES VIEW -->
+    <div id="viewSites">
+      <div class="section-header">
+        <h2 id="catTitle">All Sites</h2>
+        <span class="count" id="gridCount">0 sites</span>
+      </div>
+      <div class="grid" id="grid"></div>
     </div>
-    <div class="grid" id="grid"></div>
+
+    <!-- GITHUB REPOS VIEW -->
+    <div id="viewGithub" style="display:none">
+      <div class="section-header">
+        <h2>GitHub Repos — Tmahata12</h2>
+        <button class="top-btn" onclick="fetchRepos(true)" style="font-size:12px;padding:5px 12px;">🔄 Refresh</button>
+      </div>
+      <div id="repoGrid" class="grid"></div>
+    </div>
   </div>
 </div>
 
@@ -419,17 +432,22 @@ function saveData(d) {
 
 // ── PRESETS ──────────────────────────────────────────────────────
 const PRESETS = {
-  categories: ['School Systems','Deployment','Tools','Others'],
+  categories: ['School Systems','Render Services','Deployment','Tools','Others'],
   sites: [
-    { name: 'RHS PRMS v2',       url: 'https://rhs-prms-v2.onrender.com',             cat: 'School Systems', icon: '📋', color: '#6c63ff' },
-    { name: 'PRMS API',          url: 'https://rhs-prms-api-v2.onrender.com',          cat: 'School Systems', icon: '⚙️', color: '#8b85ff' },
-    { name: 'WBCHSE XI Result',  url: 'https://tmahata12.github.io/WBCHSE_XI-RESULT/', cat: 'School Systems', icon: '📊', color: '#22c55e' },
-    { name: 'WBCHSE Backend',    url: 'https://wbbchse-backend.onrender.com',          cat: 'School Systems', icon: '🔧', color: '#16a34a' },
-    { name: 'GitHub',            url: 'https://github.com/Tmahata12',                  cat: 'Deployment',     icon: '🐙', color: '#374151' },
-    { name: 'Render',            url: 'https://dashboard.render.com',                  cat: 'Deployment',     icon: '🚀', color: '#0ea5e9' },
-    { name: 'MongoDB Atlas',     url: 'https://cloud.mongodb.com',                     cat: 'Deployment',     icon: '🍃', color: '#16a34a' },
-    { name: 'Google Drive',      url: 'https://drive.google.com',                      cat: 'Tools',          icon: '📂', color: '#f59e0b' },
-    { name: 'Gmail',             url: 'https://mail.google.com',                       cat: 'Tools',          icon: '✉️', color: '#ef4444' },
+    // ── School Systems (GitHub Pages) ──
+    { name: 'RHS PRMS v2',         url: 'https://rhs-prms-v2.onrender.com',               cat: 'School Systems',   icon: '📋', color: '#6c63ff' },
+    { name: 'WBCHSE XI Result',    url: 'https://tmahata12.github.io/WBCHSE_XI-RESULT/',  cat: 'School Systems',   icon: '📊', color: '#22c55e' },
+    // ── Render Services ──
+    { name: 'PRMS Frontend',       url: 'https://rhs-prms-v2.onrender.com',               cat: 'Render Services',  icon: '🖥️', color: '#0ea5e9' },
+    { name: 'PRMS API v2',         url: 'https://rhs-prms-api-v2.onrender.com',           cat: 'Render Services',  icon: '⚙️', color: '#0284c7' },
+    { name: 'WBCHSE Backend',      url: 'https://wbbchse-backend.onrender.com',           cat: 'Render Services',  icon: '🔧', color: '#0369a1' },
+    { name: 'Render Dashboard',    url: 'https://dashboard.render.com',                   cat: 'Render Services',  icon: '🚀', color: '#46E3B7' },
+    // ── Deployment ──
+    { name: 'GitHub Tmahata12',    url: 'https://github.com/Tmahata12',                   cat: 'Deployment',       icon: '🐙', color: '#374151' },
+    { name: 'MongoDB Atlas',       url: 'https://cloud.mongodb.com',                      cat: 'Deployment',       icon: '🍃', color: '#16a34a' },
+    // ── Tools ──
+    { name: 'Google Drive',        url: 'https://drive.google.com',                       cat: 'Tools',            icon: '📂', color: '#f59e0b' },
+    { name: 'Gmail',               url: 'https://mail.google.com',                        cat: 'Tools',            icon: '✉️', color: '#ef4444' },
   ]
 };
 
@@ -688,6 +706,90 @@ function filterCards(q){
   a.download = 'MyWebLauncher.html';
   a.click();
   toast('Exported! Open the HTML file anytime.');
+}
+
+// ── GITHUB REPOS ─────────────────────────────────────────────────
+let currentView = 'sites';
+
+function setView(view, btn) {
+  currentView = view;
+  document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  if (view === 'github') {
+    document.getElementById('viewSites').style.display = 'none';
+    document.getElementById('viewGithub').style.display = 'block';
+    fetchRepos();
+  } else {
+    document.getElementById('viewSites').style.display = 'block';
+    document.getElementById('viewGithub').style.display = 'none';
+  }
+}
+
+async function fetchRepos(force) {
+  const CACHE_KEY = 'ghReposCache';
+  const CACHE_TIME = 'ghReposCacheTime';
+  const grid = document.getElementById('repoGrid');
+  const badge = document.getElementById('badge-gh');
+
+  // Use cache if fresh (< 10 min)
+  if (!force) {
+    const cached = localStorage.getItem(CACHE_KEY);
+    const cacheTime = parseInt(localStorage.getItem(CACHE_TIME) || '0');
+    if (cached && Date.now() - cacheTime < 10 * 60 * 1000) {
+      renderRepos(JSON.parse(cached));
+      return;
+    }
+  }
+
+  grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--text3);font-size:13px;">🔄 Loading repos from GitHub...</div>`;
+
+  try {
+    const res = await fetch('https://api.github.com/users/Tmahata12/repos?per_page=100&sort=updated');
+    if (!res.ok) throw new Error('API error');
+    const repos = await res.json();
+    localStorage.setItem(CACHE_KEY, JSON.stringify(repos));
+    localStorage.setItem(CACHE_TIME, Date.now().toString());
+    badge.textContent = repos.length;
+    renderRepos(repos);
+  } catch(e) {
+    grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--red);font-size:13px;">⚠️ Could not load repos. Check internet connection.</div>`;
+  }
+}
+
+function renderRepos(repos) {
+  const grid = document.getElementById('repoGrid');
+  const badge = document.getElementById('badge-gh');
+  badge.textContent = repos.length;
+
+  const langColors = {
+    'JavaScript':'#f1e05a','HTML':'#e34c26','CSS':'#563d7c',
+    'Python':'#3572A5','TypeScript':'#2b7489','Shell':'#89e051',
+    'Jupyter Notebook':'#DA5B0B'
+  };
+
+  grid.innerHTML = repos.map(r => {
+    const langColor = langColors[r.language] || '#5a5a72';
+    const hasPages = r.has_pages;
+    const liveUrl = hasPages ? `https://tmahata12.github.io/${r.name}/` : null;
+    const updated = new Date(r.updated_at).toLocaleDateString('en-IN', {day:'numeric',month:'short',year:'2-digit'});
+
+    return `<div class="site-card" style="align-items:flex-start;padding:14px;" onclick="window.open('${liveUrl || r.html_url}','_blank')">
+      <div style="display:flex;align-items:center;gap:8px;width:100%;margin-bottom:6px;">
+        <span style="font-size:18px">${r.fork ? '🍴' : '📦'}</span>
+        <span class="site-name" style="text-align:left;font-size:12px;font-weight:600;">${r.name}</span>
+      </div>
+      ${r.description ? `<div style="font-size:11px;color:var(--text2);line-height:1.4;margin-bottom:8px;">${r.description.slice(0,70)}${r.description.length>70?'…':''}</div>` : ''}
+      <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:auto;">
+        ${r.language ? `<span style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--text3);"><span style="width:8px;height:8px;border-radius:50%;background:${langColor};display:inline-block;"></span>${r.language}</span>` : ''}
+        ${liveUrl ? `<span style="font-size:10px;background:rgba(34,197,94,0.15);color:#4ade80;border-radius:4px;padding:1px 6px;">🌐 Live</span>` : ''}
+        <span style="font-size:10px;color:var(--text3);margin-left:auto;">${updated}</span>
+      </div>
+      <div style="display:flex;gap:6px;margin-top:8px;width:100%;">
+        <a href="${r.html_url}" target="_blank" onclick="event.stopPropagation()" style="flex:1;text-align:center;font-size:10px;padding:4px;background:var(--surface3);border-radius:5px;color:var(--text2);text-decoration:none;">GitHub</a>
+        ${liveUrl ? `<a href="${liveUrl}" target="_blank" onclick="event.stopPropagation()" style="flex:1;text-align:center;font-size:10px;padding:4px;background:rgba(34,197,94,0.1);border-radius:5px;color:#4ade80;text-decoration:none;">Open App</a>` : ''}
+      </div>
+    </div>`;
+  }).join('');
 }
 
 // Keyboard shortcut
