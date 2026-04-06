@@ -610,13 +610,24 @@ function renderSidebar() {
   document.getElementById('badge-all').textContent = d.sites.length;
   list.innerHTML = d.categories.map(cat => {
     const count = d.sites.filter(s => s.cat === cat).length;
-    const icons = { 'School Systems':'🏫','Deployment':'☁️','Tools':'🛠️','Others':'📌' };
+    const icons = { 'School Systems':'🏫','Deployment':'☁️','Tools':'🛠️','Others':'📌','Render Services':'🚀' };
     const ico = icons[cat] || '📁';
-    return `<button class="cat-btn ${activeCat===cat?'active':''}" onclick="setCategory('${cat.replace(/'/g,"\\'")}',this)" data-cat="${cat}">
+    return `<button class="cat-btn ${activeCat===cat?'active':''}" data-cat="${cat}">
       <span>${ico}</span> ${cat}
       <span class="badge">${count}</span>
     </button>`;
   }).join('');
+
+  // Attach click events after rendering
+  list.querySelectorAll('.cat-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      activeCat = this.getAttribute('data-cat');
+      document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+      this.classList.add('active');
+      renderGrid();
+      closeSidebar();
+    });
+  });
 }
 
 function renderGrid() {
