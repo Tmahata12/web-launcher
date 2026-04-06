@@ -3,7 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>My Web Launcher</title>
+<title>Web Launcher</title>
+<meta name="description" content="Ramnagar High School Web Launcher">
+<meta name="theme-color" content="#0f0f13">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Web Launcher">
+<link rel="manifest" href="manifest.json">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
   :root {
@@ -312,6 +319,95 @@
     font-family: 'DM Mono', monospace;
   }
   .stat span { color: var(--text2); font-weight: 500; }
+
+  /* ── MOBILE BOTTOM NAV ── */
+  .bottom-nav {
+    display: none;
+    position: fixed; bottom: 0; left: 0; right: 0;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    padding: 8px 0 max(8px, env(safe-area-inset-bottom));
+    z-index: 200;
+    justify-content: space-around;
+  }
+  .bnav-btn {
+    background: none; border: none;
+    display: flex; flex-direction: column; align-items: center; gap: 3px;
+    color: var(--text3); font-family: 'DM Sans', sans-serif;
+    font-size: 10px; cursor: pointer; padding: 4px 12px;
+    border-radius: 8px; transition: color 0.15s;
+    min-width: 60px;
+  }
+  .bnav-btn.active { color: var(--accent2); }
+  .bnav-btn span.ico { font-size: 20px; line-height: 1; }
+
+  /* Mobile drawer overlay */
+  .drawer-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.6); z-index: 150;
+  }
+  .drawer-overlay.open { display: block; }
+  .sidebar.drawer-open { transform: translateX(0) !important; }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 768px) {
+    .topbar { padding: 10px 14px; gap: 8px; }
+    .app-subtitle { display: none; }
+    .search-wrap { display: none; }
+    .top-btn { display: none; }
+    .stats-bar { display: none; }
+
+    .sidebar {
+      position: fixed; top: 0; left: 0; bottom: 0;
+      width: 240px; z-index: 160;
+      transform: translateX(-100%);
+      transition: transform 0.25s ease;
+      padding-top: 60px;
+      overflow-y: auto;
+    }
+    .layout { flex-direction: column; }
+    .main { padding: 14px 12px 80px; }
+    .grid { grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); gap: 10px; }
+    .site-card { padding: 14px 8px 10px; gap: 7px; }
+    .site-icon { width: 38px; height: 38px; }
+    .site-name { font-size: 11px; }
+    .site-domain { display: none; }
+    .card-menu { display: flex; }
+    .bottom-nav { display: flex; }
+    .mobile-search {
+      display: flex; align-items: center;
+      padding: 8px 12px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      gap: 8px;
+    }
+    .mobile-search input {
+      flex: 1;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px;
+      padding: 8px 12px;
+      outline: none;
+    }
+    .mobile-search input:focus { border-color: var(--accent); }
+    .mobile-search input::placeholder { color: var(--text3); }
+    .mobile-add-btn {
+      background: var(--accentbg);
+      border: 1px solid rgba(108,99,255,0.3);
+      border-radius: var(--radius-sm);
+      color: var(--accent2);
+      font-size: 22px;
+      width: 40px; height: 40px;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; flex-shrink: 0;
+    }
+  }
+  @media (min-width: 769px) {
+    .mobile-search { display: none; }
+  }
 </style>
 </head>
 <body>
@@ -330,6 +426,12 @@
   </div>
   <button class="top-btn" onclick="openAddModal()">+ Add Site</button>
   <button class="top-btn" onclick="exportHTML()" style="background:rgba(34,197,94,0.12);border-color:rgba(34,197,94,0.3);color:#4ade80;">💾 Export</button>
+</div>
+
+<!-- MOBILE SEARCH BAR -->
+<div class="mobile-search">
+  <input type="text" id="mobileSearchInput" placeholder="Search sites..." oninput="document.getElementById('searchInput').value=this.value;renderGrid()" />
+  <div class="mobile-add-btn" onclick="openAddModal()">+</div>
 </div>
 
 <!-- STATS BAR -->
@@ -414,6 +516,25 @@
 </div>
 
 <div id="toast"></div>
+
+<!-- MOBILE DRAWER OVERLAY -->
+<div class="drawer-overlay" id="drawerOverlay" onclick="closeSidebar()"></div>
+
+<!-- MOBILE BOTTOM NAV -->
+<div class="bottom-nav" id="bottomNav">
+  <button class="bnav-btn active" id="bnav-home" onclick="mobileNav('home',this)">
+    <span class="ico">🗂️</span>Sites
+  </button>
+  <button class="bnav-btn" id="bnav-cats" onclick="openSidebar()">
+    <span class="ico">☰</span>Categories
+  </button>
+  <button class="bnav-btn" id="bnav-gh" onclick="mobileNav('github',this)">
+    <span class="ico">🐙</span>GitHub
+  </button>
+  <button class="bnav-btn" id="bnav-export" onclick="exportHTML()">
+    <span class="ico">💾</span>Export
+  </button>
+</div>
 
 <script>
 // ── DATA ──────────────────────────────────────────────────────────
@@ -792,14 +913,48 @@ function renderRepos(repos) {
   }).join('');
 }
 
+// ── MOBILE ───────────────────────────────────────────────────────
+function openSidebar() {
+  document.querySelector('.sidebar').classList.add('drawer-open');
+  document.getElementById('drawerOverlay').classList.add('open');
+}
+function closeSidebar() {
+  document.querySelector('.sidebar').classList.remove('drawer-open');
+  document.getElementById('drawerOverlay').classList.remove('open');
+}
+function mobileNav(view, btn) {
+  document.querySelectorAll('.bnav-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  if (view === 'github') {
+    setView('github', null);
+  } else {
+    setView('sites', null);
+    activeCat = '__all__';
+    renderAll();
+  }
+  closeSidebar();
+}
+
+// Patch setCategory to close sidebar on mobile
+const _origSetCat = setCategory;
+function setCategory(cat, btn) {
+  _origSetCat(cat, btn);
+  closeSidebar();
+}
+
 // Keyboard shortcut
 document.addEventListener('keydown', e => {
   if ((e.ctrlKey||e.metaKey) && e.key==='k') { e.preventDefault(); document.getElementById('searchInput').focus(); }
-  if (e.key==='Escape') closeModal();
+  if (e.key==='Escape') { closeModal(); closeSidebar(); }
 });
 
 // Init
 renderAll();
+</script>
+<script>
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').catch(()=>{});
+}
 </script>
 </body>
 </html>
