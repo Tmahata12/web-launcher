@@ -445,7 +445,7 @@
   <!-- SIDEBAR -->
   <div class="sidebar">
     <div class="sidebar-label">Categories</div>
-    <button class="cat-btn active" onclick="setCategory('__all__',this)" data-cat="__all__">
+    <button class="cat-btn active" id="btn-all-sites" data-cat="__all__">
       <span>🗂️</span> All Sites
       <span class="badge" id="badge-all">0</span>
     </button>
@@ -459,7 +459,7 @@
 
     <div class="sidebar-label" style="margin-top:auto;padding-top:12px">Actions</div>
     <button class="cat-btn" onclick="importPresets()"><span>⚡</span> Load RHS Sites</button>
-    <button class="cat-btn" onclick="setView('github',this)"><span>🐙</span> GitHub Repos <span class="badge" id="badge-gh">—</span></button>
+    <button class="cat-btn" onclick="setView('github')"><span>🐙</span> GitHub Repos <span class="badge" id="badge-gh">—</span></button>
     <button class="cat-btn" onclick="clearAll()" style="color:var(--text3)"><span>🗑️</span> Clear All</button>
   </div>
 
@@ -843,10 +843,8 @@ function filterCards(q){
 // ── GITHUB REPOS ─────────────────────────────────────────────────
 let currentView = 'sites';
 
-function setView(view, btn) {
+function setView(view) {
   currentView = view;
-  document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
-  if (btn) btn.classList.add('active');
   if (view === 'github') {
     document.getElementById('viewSites').style.display = 'none';
     document.getElementById('viewGithub').style.display = 'block';
@@ -854,6 +852,15 @@ function setView(view, btn) {
   } else {
     document.getElementById('viewSites').style.display = 'block';
     document.getElementById('viewGithub').style.display = 'none';
+    renderAll();
+  }
+  // Update active state
+  document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+  if (view === 'github') {
+    document.querySelector('[onclick*="github"]') && document.querySelector('[onclick*="github"]').classList.add('active');
+  } else {
+    const allBtn = document.getElementById('btn-all-sites');
+    if (allBtn) allBtn.classList.add('active');
   }
 }
 
@@ -936,13 +943,7 @@ function closeSidebar() {
 function mobileNav(view, btn) {
   document.querySelectorAll('.bnav-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
-  if (view === 'github') {
-    setView('github', null);
-  } else {
-    setView('sites', null);
-    activeCat = '__all__';
-    renderAll();
-  }
+  setView(view);
   closeSidebar();
 }
 
@@ -953,13 +954,22 @@ function setCategory(cat, btn) {
   closeSidebar();
 }
 
+// ── INIT ─────────────────────────────────────────────────────────
+// Wire up "All Sites" button
+document.getElementById('btn-all-sites').addEventListener('click', function() {
+  activeCat = '__all__';
+  setView('sites');
+  document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+  this.classList.add('active');
+  closeSidebar();
+});
+
 // Keyboard shortcut
 document.addEventListener('keydown', e => {
   if ((e.ctrlKey||e.metaKey) && e.key==='k') { e.preventDefault(); document.getElementById('searchInput').focus(); }
   if (e.key==='Escape') { closeModal(); closeSidebar(); }
 });
 
-// Init
 renderAll();
 </script>
 <script>
