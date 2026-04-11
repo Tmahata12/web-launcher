@@ -17,6 +17,24 @@
 [data-theme="light"]{--bg:#f4f4f8;--surface:#ffffff;--surface2:#f0f0f5;--surface3:#e4e4ed;--border:rgba(0,0,0,0.07);--border2:rgba(0,0,0,0.13);--text:#18181f;--text2:#5a5a72;--text3:#9090a8;--accentbg:rgba(108,99,255,0.08)}
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column;transition:background 0.2s,color 0.2s}
+
+/* LOCK SCREEN */
+#lockScreen{position:fixed;inset:0;background:var(--bg);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px}
+#lockScreen.hidden{display:none}
+.lock-box{background:var(--surface);border:1px solid var(--border2);border-radius:22px;padding:36px 32px;width:100%;max-width:360px;text-align:center;animation:pop 0.2s ease}
+.lock-logo{width:64px;height:64px;background:var(--accent);border-radius:18px;display:flex;align-items:center;justify-content:center;font-size:30px;margin:0 auto 16px}
+.lock-title{font-size:20px;font-weight:600;margin-bottom:4px}
+.lock-sub{font-size:13px;color:var(--text3);margin-bottom:24px;font-family:'DM Mono',monospace}
+.lock-input{width:100%;background:var(--surface2);border:1px solid var(--border2);border-radius:var(--radius-sm);color:var(--text);font-family:'DM Sans',sans-serif;font-size:16px;padding:12px 16px;outline:none;text-align:center;letter-spacing:3px;margin-bottom:12px;transition:border-color 0.2s}
+.lock-input:focus{border-color:var(--accent)}
+.lock-input.error{border-color:var(--red);animation:shake 0.3s ease}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}
+.lock-btn{width:100%;background:var(--accent);border:none;border-radius:var(--radius-sm);color:#fff;font-family:'DM Sans',sans-serif;font-size:15px;font-weight:600;padding:12px;cursor:pointer;transition:opacity 0.15s;margin-bottom:8px}
+.lock-btn:hover{opacity:0.88}
+.lock-err{font-size:12px;color:var(--red);min-height:18px}
+.lock-hint{font-size:11px;color:var(--text3);margin-top:16px}
+.change-pwd-btn{background:none;border:none;color:var(--text3);font-family:'DM Sans',sans-serif;font-size:11px;cursor:pointer;text-decoration:underline;margin-top:8px}
+.change-pwd-btn:hover{color:var(--text2)}
 .topbar{display:flex;align-items:center;gap:10px;padding:12px 20px;background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100}
 .logo{width:32px;height:32px;background:var(--accent);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
 .app-title{font-size:15px;font-weight:600;letter-spacing:-0.3px}
@@ -129,6 +147,21 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 </style>
 </head>
 <body>
+
+<!-- LOCK SCREEN -->
+<div id="lockScreen">
+  <div class="lock-box">
+    <div class="lock-logo">🚀</div>
+    <div class="lock-title">Web Launcher</div>
+    <div class="lock-sub">Ramnagar High School</div>
+    <input class="lock-input" type="password" id="lockInput" placeholder="Enter password" maxlength="20" />
+    <button class="lock-btn" onclick="checkPassword()">Unlock</button>
+    <div class="lock-err" id="lockErr"></div>
+    <br>
+    <button class="change-pwd-btn" onclick="changePassword()">Change password</button>
+  </div>
+</div>
+
 <div class="topbar">
   <div class="logo">🚀</div>
   <div><div class="app-title">Web Launcher</div><div class="app-subtitle"><span class="full-name">Ramnagar High School</span><span class="short-name">RHS</span></div></div>
@@ -455,6 +488,53 @@ function exportHTML(){
   const a=document.createElement('a');a.href='data:text/html;charset=utf-8,'+encodeURIComponent(html);a.download='MyWebLauncher.html';a.click();toast('Exported!');
 }
 
+// PASSWORD LOCK
+const DEFAULT_PWD = 'rhs2024';
+const PWD_KEY = 'wl_pwd';
+const SESSION_KEY = 'wl_unlocked';
+
+function getPassword(){return localStorage.getItem(PWD_KEY)||DEFAULT_PWD}
+
+function checkPassword(){
+  const input=document.getElementById('lockInput').value;
+  const err=document.getElementById('lockErr');
+  if(input===getPassword()){
+    sessionStorage.setItem(SESSION_KEY,'1');
+    document.getElementById('lockScreen').classList.add('hidden');
+    err.textContent='';
+    renderAll();
+  } else {
+    err.textContent='Wrong password. Try again.';
+    const inp=document.getElementById('lockInput');
+    inp.classList.add('error');
+    inp.value='';
+    setTimeout(()=>inp.classList.remove('error'),400);
+  }
+}
+
+function changePassword(){
+  const cur=prompt('Enter current password:');
+  if(cur!==getPassword()){alert('Wrong password!');return}
+  const np=prompt('Enter new password (min 4 chars):');
+  if(!np||np.length<4){alert('Password too short!');return}
+  const np2=prompt('Confirm new password:');
+  if(np!==np2){alert('Passwords do not match!');return}
+  localStorage.setItem(PWD_KEY,np);
+  alert('Password changed successfully!');
+}
+
+function initLock(){
+  // Check if already unlocked this session
+  if(sessionStorage.getItem(SESSION_KEY)==='1'){
+    document.getElementById('lockScreen').classList.add('hidden');
+    renderAll();
+  }
+  // Enter key support
+  document.getElementById('lockInput').addEventListener('keydown',function(e){
+    if(e.key==='Enter')checkPassword();
+  });
+}
+
 // MOBILE
 function openSidebar(){document.querySelector('.sidebar').classList.add('drawer-open');document.getElementById('drawerOverlay').classList.add('open')}
 function closeSidebar(){document.querySelector('.sidebar').classList.remove('drawer-open');document.getElementById('drawerOverlay').classList.remove('open')}
@@ -481,7 +561,7 @@ document.addEventListener('keydown',e=>{
   if((e.ctrlKey||e.metaKey)&&e.key==='k'){e.preventDefault();document.getElementById('searchInput').focus()}
   if(e.key==='Escape'){closeModal();closeSidebar()}
 });
-renderAll();
+initLock();
 </script>
 <script>if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js').catch(()=>{})}</script>
 </body>
